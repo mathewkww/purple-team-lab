@@ -83,6 +83,8 @@ def init_state() -> None:
         st.session_state.events = []
     if "runs" not in st.session_state:
         st.session_state.runs = []
+    if "baseline_seeded" not in st.session_state:
+        st.session_state.baseline_seeded = False
     if "page" not in st.session_state:
         st.session_state.page = "Command Center"
 
@@ -196,6 +198,42 @@ def run_advisory_campaign(advisories: list[dict[str, Any]]) -> int:
     return len(advisories)
 
 
+def seed_baseline_simulations() -> None:
+    """Create a portfolio baseline of synthetic tests for a useful first-view dashboard."""
+    if st.session_state.baseline_seeded:
+        return
+    baseline_tests = [
+        ("Public-facing application exploitation", "Baseline: public-facing gateway readiness"),
+        ("OAuth token misuse", "Baseline: identity consent and token readiness"),
+        ("Credential access attempt", "Baseline: authentication abuse readiness"),
+        ("Public-facing application exploitation", "Baseline: web telemetry correlation replay"),
+        ("OAuth token misuse", "Baseline: privileged API investigation replay"),
+        ("Credential access attempt", "Baseline: account takeover containment replay"),
+    ]
+    for scenario, title in reversed(baseline_tests):
+        simulate(scenario, title)
+    st.session_state.baseline_seeded = True
+
+
+def operational_summary() -> dict[str, Any]:
+    """Summarize completed safe simulations for command-center decision support."""
+    runs = st.session_state.runs
+    events = st.session_state.events
+    actions = [action for run in runs for action in run["response"]]
+    high_signals = sum(event["severity"] == "HIGH" for event in events)
+    coverage = len({run["technique"] for run in runs})
+    return {
+        "coverage": coverage,
+        "actions": len(set(actions)),
+        "high_signals": high_signals,
+        "remediations": [
+            "Patch or disable internet-facing administration paths; validate WAF, web-server, and egress telemetry before reopening exposure.",
+            "Revoke suspicious OAuth tokens, restrict privileged consent, and require reauthentication for impacted identities.",
+            "Apply MFA challenges and account-reset playbooks for anomalous sign-in sequences; retain identity and endpoint evidence.",
+        ],
+    }
+
+
 def render_live_pipeline(advisory_count: int, simulation_count: int, signal_count: int) -> None:
     """Interactive local-only pipeline renderer for the command center."""
     markup = f"""
@@ -227,6 +265,7 @@ def render_live_pipeline(advisory_count: int, simulation_count: int, signal_coun
 
 
 init_state()
+seed_baseline_simulations()
 
 st.markdown(
     """
@@ -288,6 +327,25 @@ if page == "Command Center":
     st.title("Exposure command center")
     st.caption("Prioritized threat intelligence and detection readiness across your simulation environment.")
     render_live_pipeline(len(st.session_state.advisories), len(st.session_state.runs), len(st.session_state.events))
+    summary = operational_summary()
+    st.subheader("Operational readiness summary")
+    st.caption("Baseline simulations are synthetic, telemetry-only readiness tests. They do not interact with production systems.")
+    sum1, sum2, sum3 = st.columns(3)
+    sum1.metric("ATT&CK paths validated", f"{summary['coverage']} / 3")
+    sum2.metric("Containment actions prepared", summary["actions"])
+    sum3.metric("High-priority signals exercised", summary["high_signals"])
+    remediation_col, assurance_col = st.columns([3, 2])
+    with remediation_col:
+        st.markdown("#### Suggested remediation priorities")
+        for remediation in summary["remediations"]:
+            st.markdown(f"- {remediation}")
+    with assurance_col:
+        st.markdown("#### Decision support")
+        st.info(
+            f"{len(st.session_state.runs)} completed synthetic runs correlated "
+            f"{len(st.session_state.events)} telemetry signals. Next: validate these same detections "
+            "against approved, non-production log sources."
+        )
     risks = [risk_score(item) for item in st.session_state.advisories]
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Open threat records", len(st.session_state.advisories))
