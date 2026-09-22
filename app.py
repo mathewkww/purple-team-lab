@@ -201,16 +201,16 @@ def render_live_pipeline(advisory_count: int, simulation_count: int, signal_coun
     markup = f"""
     <!doctype html><html><head><style>
       * {{ box-sizing:border-box }} body {{ margin:0; background:transparent; color:#edf3fb; font-family:Inter,Arial,sans-serif; }}
-      .shell {{ background:linear-gradient(135deg,#101b2b,#0b1421); border:1px solid #293a53; border-radius:12px; padding:18px; overflow:hidden; }}
+      .shell {{ background:linear-gradient(135deg,#101b2b,#0b1421); border:1px solid #293a53; border-radius:12px; padding:18px; overflow:visible; }}
       .head {{ display:flex; justify-content:space-between; align-items:center; margin-bottom:17px; }} .kicker {{ color:#a48eff; font-size:10px; font-weight:700; letter-spacing:1.4px; }} h2 {{ margin:4px 0 0; font-size:17px; }} .live {{ color:#81edbf; font-size:11px; font-weight:700; }} .live:before {{ content:'●'; color:#38d5c5; margin-right:5px; }}
-      .pipeline {{ display:grid; grid-template-columns:repeat(6,minmax(96px,1fr)); align-items:center; gap:0; position:relative; }}
-      .stage {{ position:relative; z-index:2; min-height:106px; padding:13px 11px; text-align:left; background:#152237; color:#eff5ff; border:1px solid #30425d; border-radius:9px; cursor:pointer; transition:.2s ease; }}
+      .pipeline {{ display:flex; align-items:stretch; width:100%; min-width:0; position:relative; }}
+      .stage {{ position:relative; z-index:2; flex:1 1 0; min-width:0; min-height:106px; padding:13px 10px; text-align:left; background:#152237; color:#eff5ff; border:1px solid #30425d; border-radius:9px; cursor:pointer; transition:.2s ease; overflow-wrap:anywhere; }}
       .stage:hover,.stage.active {{ border-color:#9b7cff; background:#1c2a45; transform:translateY(-2px); }} .stage:focus {{ outline:2px solid #a58bff; outline-offset:2px; }}
       .num {{ color:#a692ff; font-size:10px; font-weight:700; letter-spacing:1px; }} .name {{ display:block; margin-top:8px; font-size:13px; font-weight:700; }} .count {{ display:block; margin-top:7px; color:#91a5bf; font-size:11px; }}
-      .line {{ height:2px; background:#3a4b65; position:relative; }} .line:after {{ content:''; position:absolute; top:-3px; left:0; height:8px; width:8px; border-radius:50%; background:#a58bff; box-shadow:0 0 12px #a58bff; animation:flow 2.8s linear infinite; }}
+      .line {{ align-self:center; flex:0 0 clamp(12px,2vw,28px); height:2px; background:#3a4b65; position:relative; }} .line:after {{ content:''; position:absolute; top:-3px; left:0; height:8px; width:8px; border-radius:50%; background:#a58bff; box-shadow:0 0 12px #a58bff; animation:flow 2.8s linear infinite; }}
       .line:nth-of-type(4):after {{ animation-delay:.55s }} .line:nth-of-type(6):after {{ animation-delay:1.1s }} .line:nth-of-type(8):after {{ animation-delay:1.65s }} .line:nth-of-type(10):after {{ animation-delay:2.2s }}
       .detail {{ margin-top:15px; padding-top:13px; border-top:1px solid #26374f; color:#a9b8ca; font-size:12px; min-height:33px; }} .detail b {{ color:#f4f7fb; }}
-      @keyframes flow {{ from {{ left:0 }} to {{ left:calc(100% - 8px) }} }} @media(max-width:720px) {{ .pipeline {{ grid-template-columns:1fr 22px 1fr; gap:8px 0; }} .line {{ width:22px; }} .line:after {{ animation-duration:2.2s }} }} @media(prefers-reduced-motion:reduce) {{ * {{ animation:none!important; transition:none!important }} }}
+      @keyframes flow {{ from {{ left:0 }} to {{ left:calc(100% - 8px) }} }} @media(max-width:760px) {{ .shell {{ padding:14px; }} .pipeline {{ overflow-x:auto; padding:3px; }} .stage {{ flex:0 0 104px; }} .line {{ flex-basis:18px; }} .line:after {{ animation-duration:2.2s }} }} @media(prefers-reduced-motion:reduce) {{ * {{ animation:none!important; transition:none!important }} }}
     </style></head><body><div class="shell">
       <div class="head"><div><div class="kicker">LIVE PROCESS FLOW</div><h2>Threat-to-response pipeline</h2></div><div class="live">SESSION ACTIVE</div></div>
       <div class="pipeline">
@@ -223,7 +223,7 @@ def render_live_pipeline(advisory_count: int, simulation_count: int, signal_coun
       </div><div class="detail" id="detail" aria-live="polite"><b>Advisory intake:</b> Normalizes public advisories and analyst submissions into reviewable threat records.</div>
     </div><script>document.querySelectorAll('.stage').forEach(b=>b.addEventListener('click',()=>{{document.querySelectorAll('.stage').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('detail').innerHTML='<b>'+b.dataset.stage+':</b> '+b.dataset.detail}}));</script></body></html>
     """
-    components.html(markup, height=230, scrolling=False)
+    components.html(markup, height=270, scrolling=False)
 
 
 init_state()
