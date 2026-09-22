@@ -82,6 +82,8 @@ def init_state() -> None:
         st.session_state.events = []
     if "runs" not in st.session_state:
         st.session_state.runs = []
+    if "page" not in st.session_state:
+        st.session_state.page = "Command Center"
 
 
 def risk_score(advisory: dict[str, Any]) -> int:
@@ -107,7 +109,34 @@ def simulate(name: str, advisory_title: str) -> None:
             }
         )
     st.session_state.events = events + st.session_state.events
-    st.session_state.runs.insert(0, {"id": run_id, "scenario": name, "advisory": advisory_title, "technique": scenario["technique"], "response": scenario["response"], "time": now})
+    st.session_state.runs.insert(0, {
+        "id": run_id,
+        "scenario": name,
+        "advisory": advisory_title,
+        "technique": scenario["technique"],
+        "response": scenario["response"],
+        "time": now,
+        "status": "Detection validated",
+        "signals": len(events),
+        "summary": f"Blue team correlated {len(events)} synthetic signals and proposed {len(scenario['response'])} containment actions.",
+    })
+
+
+def scenario_for(advisory: dict[str, Any]) -> str:
+    technique = advisory.get("technique", "")
+    if "T1528" in technique or "token" in advisory.get("title", "").lower():
+        return "OAuth token misuse"
+    if "T1110" in technique or "credential" in advisory.get("title", "").lower():
+        return "Credential access attempt"
+    return "Public-facing application exploitation"
+
+
+def run_recent_briefing() -> int:
+    """Generate a safe, telemetry-only readiness test from the newest intake records."""
+    candidates = st.session_state.advisories[:3]
+    for advisory in reversed(candidates):
+        simulate(scenario_for(advisory), advisory["title"])
+    return len(candidates)
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -175,6 +204,11 @@ st.markdown(
       .insight-card { background:linear-gradient(125deg,rgba(155,124,255,.15),rgba(18,27,41,.7) 50%); border:1px solid #3a3964; border-radius:10px; padding:1.05rem 1.15rem; min-height:128px; }
       .insight-card b { color:#fff; font-size:1.02rem; } .insight-card span { color:#9eacc0; font-size:.84rem; display:block; margin-top:.45rem; line-height:1.45; }
       .sidebar-brand { padding:0 .65rem 1.25rem; font-weight:700; color:#f6f8ff; letter-spacing:-.02em; } .sidebar-brand small { display:block; margin-top:4px; color:#7890ae; font: .68rem 'DM Mono',monospace; letter-spacing:.06em; }
+      [data-testid="stSidebar"] .stButton > button { width:100%; justify-content:flex-start; background:transparent; color:#aab7ca; border:1px solid transparent; box-shadow:none; font-size:.86rem; font-weight:500; padding:.52rem .68rem; }
+      [data-testid="stSidebar"] .stButton > button:hover { background:#182338; border-color:#2a3a53; color:#fff; }
+      [data-testid="stSidebar"] .stButton > button[kind="primary"] { background:linear-gradient(90deg,rgba(137,104,250,.26),rgba(137,104,250,.06)); border-color:#5e4db1; color:#fff; }
+      .run-card { background:linear-gradient(130deg,rgba(24,35,56,.96),rgba(13,22,35,.94)); border:1px solid #2a3951; border-radius:10px; padding:1rem 1.1rem; margin-bottom:.7rem; }
+      .run-meta { color:#94a6bd; font:.72rem 'DM Mono',monospace; text-transform:uppercase; letter-spacing:.04em; } .run-status { color:#8ff0c4; font-size:.76rem; font-weight:700; float:right; }
       .stAlert { border-radius:8px; }
     </style>
     <div class="topbar">
@@ -187,7 +221,11 @@ st.markdown(
 
 with st.sidebar:
     st.markdown('<div class="sidebar-brand">PURPLE TEAM LAB<small>THREAT OPERATIONS CONSOLE</small></div>', unsafe_allow_html=True)
-    page = st.radio("Workspace", ["Command Center", "Threat Intake", "Simulation Lab", "Detection & Response"], label_visibility="collapsed")
+    navigation = [("Command Center", "◫"), ("Threat Intake", "◌"), ("Simulation Lab", "◈"), ("Detection & Response", "◉"), ("Recent Simulations", "◷")]
+    for destination, icon in navigation:
+        if st.button(f"{icon}  {destination}", key=f"nav-{destination}", type="primary" if st.session_state.page == destination else "secondary"):
+            st.session_state.page = destination
+    page = st.session_state.page
     st.divider()
     st.caption("SCOPE: SYNTHETIC TELEMETRY ONLY")
     st.caption("MODE: SAFE SIMULATION")
@@ -262,6 +300,29 @@ elif page == "Simulation Lab":
     if st.button("Run controlled simulation", type="primary"):
         simulate(scenario_name, advisory_title)
         st.success("Simulation complete. Blue-team telemetry is available in Detection & Response.")
+
+elif page == "Recent Simulations":
+    st.markdown('<div class="section-kicker">Readiness validation</div>', unsafe_allow_html=True)
+    st.title("Recent simulations")
+    st.caption("A defensible audit trail for synthetic tests sourced from reviewed threat intelligence.")
+    left, right = st.columns([3, 1])
+    with left:
+        st.markdown("Run the latest intake through safe behavior emulation. No exploit code, external traffic, or production changes are involved.")
+    with right:
+        if st.button("Run latest briefing", type="primary", use_container_width=True):
+            count = run_recent_briefing()
+            st.success(f"Completed {count} telemetry-only readiness simulation(s).")
+    if not st.session_state.runs:
+        st.info("No simulations have been recorded yet. Run the latest briefing or start a focused scenario from Simulation Lab.")
+    else:
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Completed", len(st.session_state.runs))
+        c2.metric("Validated", sum(run["status"] == "Detection validated" for run in st.session_state.runs))
+        c3.metric("Signals exercised", sum(run["signals"] for run in st.session_state.runs))
+        st.subheader("Simulation timeline")
+        for run in st.session_state.runs:
+            timestamp = run["time"].strftime("%Y-%m-%d %H:%M UTC")
+            st.markdown(f'''<div class="run-card"><span class="run-status">● {run["status"].upper()}</span><b>{run["scenario"]}</b><div class="run-meta">{timestamp} · {run["technique"]} · RUN {run["id"]}</div><p style="margin:.6rem 0 .2rem">{run["summary"]}</p><div class="run-meta">THREAT INPUT: {run["advisory"]}</div></div>''', unsafe_allow_html=True)
 
 else:
     st.header("Blue agent: detection, response, and disruption")
