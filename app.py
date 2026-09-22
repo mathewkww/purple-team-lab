@@ -301,6 +301,11 @@ st.markdown(
       [data-testid="stSidebar"] .stButton > button[kind="primary"] { background:linear-gradient(90deg,rgba(137,104,250,.26),rgba(137,104,250,.06)); border-color:#5e4db1; color:#fff; }
       .run-card { background:linear-gradient(130deg,rgba(24,35,56,.96),rgba(13,22,35,.94)); border:1px solid #2a3951; border-radius:10px; padding:1rem 1.1rem; margin-bottom:.7rem; }
       .run-meta { color:#94a6bd; font:.72rem 'DM Mono',monospace; text-transform:uppercase; letter-spacing:.04em; } .run-status { color:#8ff0c4; font-size:.76rem; font-weight:700; float:right; }
+      .workflow-card { background:linear-gradient(135deg,rgba(22,34,53,.96),rgba(13,22,35,.95)); border:1px solid #2b3b55; border-radius:11px; padding:1.1rem 1.15rem; min-height:144px; }
+      .workflow-step { width:22px; height:22px; display:inline-grid; place-items:center; border-radius:50%; background:#785bea; color:#fff; font:.7rem 'DM Mono',monospace; font-weight:700; margin-right:7px; }
+      .workflow-card b { color:#fff; font-size:1rem; } .workflow-card p { margin:.55rem 0 0; color:#9cabbe; font-size:.84rem; line-height:1.5; }
+      .action-card { background:rgba(255,183,93,.08); border-left:3px solid #ffb75d; border-radius:6px; padding:.72rem .85rem; margin:.55rem 0; color:#d9e2ee; font-size:.86rem; line-height:1.45; }
+      .muted-panel { background:rgba(18,27,41,.82); border:1px solid #2a3951; border-radius:10px; padding:1rem 1.1rem; }
       .stAlert { border-radius:8px; }
     </style>
     <div class="topbar">
@@ -323,70 +328,79 @@ with st.sidebar:
     st.caption("MODE: SAFE SIMULATION")
 
 if page == "Command Center":
-    st.markdown('<div class="section-kicker">Executive overview</div>', unsafe_allow_html=True)
-    st.title("Exposure command center")
-    st.caption("Prioritized threat intelligence and detection readiness across your simulation environment.")
-    render_live_pipeline(len(st.session_state.advisories), len(st.session_state.runs), len(st.session_state.events))
-    summary = operational_summary()
-    st.subheader("Operational readiness summary")
-    st.caption("Baseline simulations are synthetic, telemetry-only readiness tests. They do not interact with production systems.")
-    sum1, sum2, sum3 = st.columns(3)
-    sum1.metric("ATT&CK paths validated", f"{summary['coverage']} / 3")
-    sum2.metric("Containment actions prepared", summary["actions"])
-    sum3.metric("High-priority signals exercised", summary["high_signals"])
-    remediation_col, assurance_col = st.columns([3, 2])
-    with remediation_col:
-        st.markdown("#### Suggested remediation priorities")
-        for remediation in summary["remediations"]:
-            st.markdown(f"- {remediation}")
-    with assurance_col:
-        st.markdown("#### Decision support")
-        st.info(
-            f"{len(st.session_state.runs)} completed synthetic runs correlated "
-            f"{len(st.session_state.events)} telemetry signals. Next: validate these same detections "
-            "against approved, non-production log sources."
-        )
-    risks = [risk_score(item) for item in st.session_state.advisories]
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Open threat records", len(st.session_state.advisories))
-    col2.metric("Simulations executed", len(st.session_state.runs))
-    col3.metric("Signals correlated", len(st.session_state.events))
-    col4.metric("Critical exposure", f"{max(risks, default=0)}/100")
-    st.write("")
-    card1, card2, card3 = st.columns(3)
-    card1.markdown('<div class="insight-card"><div class="section-kicker">Priority path</div><b>Public-facing gateway</b><span>Active-exploitation signal detected. Validate exposure and containment coverage.</span></div>', unsafe_allow_html=True)
-    card2.markdown('<div class="insight-card"><div class="section-kicker">Detection posture</div><b>Coverage ready</b><span>Three safe adversary scenarios are available for replay and response validation.</span></div>', unsafe_allow_html=True)
-    card3.markdown('<div class="insight-card"><div class="section-kicker">Operations loop</div><b>Intake → Response</b><span>Threat records are reviewed before they become simulation scenarios.</span></div>', unsafe_allow_html=True)
-    st.subheader("Latest exploited advisories")
-    st.caption("Current CISA KEV records. Exploitation is confirmed; zero-day status is not inferred unless the original publisher explicitly states it.")
+    st.markdown('<div class="section-kicker">Threat readiness workspace</div>', unsafe_allow_html=True)
+    st.title("Review new threats. Prepare decisive response.")
+    st.caption("A security-operations workspace for triaging trusted vulnerability intelligence, planning mitigations, and validating defensive coverage with safe synthetic telemetry.")
+
     try:
         latest_advisories = latest_kev_snapshot()
     except Exception:
         latest_advisories = []
+    summary = operational_summary()
+    risks = [risk_score(item) for item in st.session_state.advisories]
+    exploited_count = len(latest_advisories)
+
+    top1, top2, top3, top4 = st.columns(4)
+    top1.metric("New exploited advisories", exploited_count, help="Newest records from CISA's Known Exploited Vulnerabilities catalog.")
+    top2.metric("Threats awaiting review", len(st.session_state.advisories))
+    top3.metric("Detection paths validated", f"{summary['coverage']} / 3")
+    top4.metric("Highest intake priority", f"{max(risks, default=0)}/100")
+
+    st.subheader("Your review workflow")
+    step1, step2, step3, step4 = st.columns(4)
+    step1.markdown('<div class="workflow-card"><span class="workflow-step">1</span><b>Triage intelligence</b><p>Review newly exploited advisories and capture analyst-found threats with their source, scope, and confidence.</p></div>', unsafe_allow_html=True)
+    step2.markdown('<div class="workflow-card"><span class="workflow-step">2</span><b>Confirm exposure</b><p>Use your approved asset inventory to determine whether affected products, identities, or interfaces are in scope.</p></div>', unsafe_allow_html=True)
+    step3.markdown('<div class="workflow-card"><span class="workflow-step">3</span><b>Prepare actions</b><p>Prioritize vendor patches, compensating controls, evidence preservation, and containment owners.</p></div>', unsafe_allow_html=True)
+    step4.markdown('<div class="workflow-card"><span class="workflow-step">4</span><b>Validate controls</b><p>Run telemetry-only simulations to verify detections and response playbooks without touching production systems.</p></div>', unsafe_allow_html=True)
+
+    left, right = st.columns([3, 2])
+    with left:
+        st.subheader("New exploited intelligence")
+        st.caption("CISA KEV entries indicate known exploitation. Treat product exposure as unconfirmed here until you validate it against your own inventory.")
+        if latest_advisories:
+            latest_rows = [{"Advisory": item["title"], "CVE": item["cve"], "Added": item["added"], "Affected product": item["product"]} for item in latest_advisories[:5]]
+            st.dataframe(pd.DataFrame(latest_rows), use_container_width=True, hide_index=True)
+            with st.expander("View all latest advisory records"):
+                all_rows = [{"Advisory": item["title"], "CVE": item["cve"], "Added": item["added"], "Affected product": item["product"]} for item in latest_advisories]
+                st.dataframe(pd.DataFrame(all_rows), use_container_width=True, hide_index=True)
+        else:
+            st.info("The live advisory feed is temporarily unavailable. You can retry the import from Threat Intake.")
+    with right:
+        st.subheader("Recommended next actions")
+        st.markdown('<div class="action-card"><b>1. Identify exposure</b><br>Match today’s advisory products and CVEs to approved asset and internet-exposure inventories.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="action-card"><b>2. Apply or mitigate</b><br>Use the vendor-required action below; where patching is delayed, disable exposed administration paths and enforce access controls.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="action-card"><b>3. Validate readiness</b><br>Confirm monitoring for web, identity, endpoint, and egress behavior before closing the review.</div>', unsafe_allow_html=True)
+        if st.button("Run advisory readiness simulation", type="primary", use_container_width=True, disabled=not latest_advisories):
+            count = run_advisory_campaign(latest_advisories)
+            st.success(f"Completed {count} safe, telemetry-only advisory simulations.")
+        st.caption("This simulation creates synthetic signals only—no scanning, exploitation, external traffic, or production changes.")
+
+    st.subheader("Immediate mitigation guidance")
     if latest_advisories:
-        action_col, note_col = st.columns([1, 3])
-        with action_col:
-            if st.button("Run 10 advisory simulations", type="primary", use_container_width=True):
-                count = run_advisory_campaign(latest_advisories)
-                st.success(f"Completed {count} safe, telemetry-only advisory simulations.")
-        with note_col:
-            st.caption("Each simulation emits synthetic behavioral signals only and produces detection plus containment recommendations.")
-        latest_rows = [{"Advisory": item["title"], "CVE": item["cve"], "Added": item["added"], "Affected scope": item["product"]} for item in latest_advisories]
-        st.dataframe(pd.DataFrame(latest_rows), use_container_width=True, hide_index=True)
-        st.subheader("Recommended patch and mitigation")
-        patch_rows = [{"CVE": item["cve"], "Advisory": item["title"], "Recommended action": item["patch"]} for item in latest_advisories]
+        patch_rows = [{"CVE": item["cve"], "Affected product": item["product"], "Vendor / CISA action": item["patch"]} for item in latest_advisories[:5]]
         st.dataframe(pd.DataFrame(patch_rows), use_container_width=True, hide_index=True)
-    else:
-        st.info("The live advisory feed is temporarily unavailable. Use Threat Intake to retry the CISA KEV import.")
-    st.subheader("Emerging exposure watchlist")
-    st.caption("Defensive prioritization based on commonly targeted exposure patterns—not predictions of undisclosed vulnerabilities.")
+        st.caption("Use these advisory actions alongside your change-management process, maintenance windows, and product-specific vendor guidance.")
+
+    st.subheader("Detection and response readiness")
+    render_live_pipeline(len(st.session_state.advisories), len(st.session_state.runs), len(st.session_state.events))
+    ready1, ready2, ready3 = st.columns(3)
+    ready1.metric("Safe simulations completed", len(st.session_state.runs))
+    ready2.metric("Synthetic signals correlated", len(st.session_state.events))
+    ready3.metric("High-priority signals exercised", summary["high_signals"])
+    readiness_left, readiness_right = st.columns([3, 2])
+    with readiness_left:
+        st.markdown("#### Control improvements to validate")
+        for remediation in summary["remediations"]:
+            st.markdown(f"- {remediation}")
+    with readiness_right:
+        st.markdown("#### What the numbers mean")
+        st.markdown('<div class="muted-panel">These counts demonstrate portfolio readiness coverage, not activity in a real environment. Connect only approved telemetry and asset sources before using this workflow for operational decisions.</div>', unsafe_allow_html=True)
+
+    st.subheader("Exposure patterns to watch")
     watch1, watch2, watch3 = st.columns(3)
-    watch1.markdown('<div class="insight-card"><div class="section-kicker">External interfaces</div><b>Internet-facing administration</b><span>Prioritize patch currency, MFA, allowlisting, and log coverage for gateways and management consoles.</span></div>', unsafe_allow_html=True)
-    watch2.markdown('<div class="insight-card"><div class="section-kicker">Identity boundary</div><b>OAuth and service accounts</b><span>Review privileged consent, token lifetime, and anomalous API access for high-impact misuse paths.</span></div>', unsafe_allow_html=True)
-    watch3.markdown('<div class="insight-card"><div class="section-kicker">Core platforms</div><b>Kernel and appliance fleets</b><span>Track vendor advisories, inventory exposure, and validate rollback-ready patch deployment.</span></div>', unsafe_allow_html=True)
-    st.subheader("Prioritized exposure queue")
-    rows = [{"Threat": x["title"], "Risk": risk_score(x), "Exploited in wild": "Yes" if x["exploited"] else "No", "Technique": x["technique"]} for x in st.session_state.advisories]
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    watch1.markdown('<div class="insight-card"><div class="section-kicker">External interfaces</div><b>Internet-facing administration</b><span>Review patch currency, MFA, allowlisting, and WAF or proxy logs for management interfaces.</span></div>', unsafe_allow_html=True)
+    watch2.markdown('<div class="insight-card"><div class="section-kicker">Identity boundary</div><b>OAuth and service accounts</b><span>Review privileged consent, token lifetime, high-risk sign-ins, and anomalous API access.</span></div>', unsafe_allow_html=True)
+    watch3.markdown('<div class="insight-card"><div class="section-kicker">Core platforms</div><b>Kernel and appliance fleets</b><span>Track advisories, inventory exposure, and maintain rollback-ready patch deployment plans.</span></div>', unsafe_allow_html=True)
 
 elif page == "Threat Intake":
     st.header("Threat intake")
