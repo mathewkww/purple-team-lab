@@ -11,6 +11,7 @@ import json
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
+from dashboard import render_dashboard
 
 
 st.set_page_config(page_title="Purple Team Lab", page_icon="🟣", layout="wide")
@@ -186,6 +187,10 @@ def latest_kev_snapshot(limit: int = 10) -> list[dict[str, Any]]:
         "added": item.get("dateAdded", "Unknown"),
         "product": f"{item.get('vendorProject', '')} {item.get('product', '')}".strip() or "Affected product not specified",
         "patch": item.get("requiredAction", "Apply the vendor's current security update and validate exposure."),
+        "description": item.get("shortDescription", ""),
+        "notes": item.get("notes", ""),
+        "due": item.get("dueDate", "Not supplied"),
+        "ransomware": item.get("knownRansomwareCampaignUse", "Unknown"),
         "source": "CISA KEV",
         "technique": "T1190 — Exploit Public-Facing Application",
     } for item in items]
@@ -285,7 +290,7 @@ st.markdown(
       .env { color:#bdc7d5; background:#131e2e; border:1px solid #2c3a4f; border-radius:20px; padding:5px 11px; font-size:.75rem; font-family:'DM Mono',monospace; }
       .live { color:#8ff0c4; font-size:.75rem; font-weight:600; } .live:before { content:'●'; color:var(--cyan); margin-right:6px; }
       h1,h2,h3 { color:var(--ink)!important; letter-spacing:-.035em; } h1 { font-size:1.7rem!important; margin-bottom:.2rem!important; } h2 { font-size:1.22rem!important; margin-top:1.7rem!important; }
-      p, .stCaption { color:var(--muted)!important; }
+      [data-testid="stCaptionContainer"] { color:#b0bdd0; }
       [data-testid="stMetric"] { background:linear-gradient(145deg, rgba(24,35,56,.95), rgba(15,24,39,.95)); border:1px solid #28364d; border-radius:10px; padding:1rem 1.05rem; min-height:105px; box-shadow:0 16px 32px rgba(0,0,0,.14); }
       [data-testid="stMetricLabel"] { color:#91a0b7!important; font-size:.77rem!important; text-transform:uppercase; letter-spacing:.08em; } [data-testid="stMetricValue"] { color:#f8fbff!important; font-size:1.72rem!important; }
       [data-testid="stDataFrame"] { border:1px solid #28364d; border-radius:10px; overflow:hidden; }
@@ -307,10 +312,45 @@ st.markdown(
       .action-card { background:rgba(255,183,93,.08); border-left:3px solid #ffb75d; border-radius:6px; padding:.72rem .85rem; margin:.55rem 0; color:#d9e2ee; font-size:.86rem; line-height:1.45; }
       .muted-panel { background:rgba(18,27,41,.82); border:1px solid #2a3951; border-radius:10px; padding:1rem 1.1rem; }
       .stAlert { border-radius:8px; }
+      /* Keep widget text independent of prose colors, including nested Markdown. */
+      :root { --muted:#b0bdd0; }
+      [data-testid="stHeader"] { background:#090e18; color:#e6edf7; }
+      .block-container { padding-top:3.5rem; max-width:1500px; }
+      h1 { font-size:2.25rem!important; line-height:1.15!important; }
+      h3 { font-size:1.2rem!important; margin-top:.5rem!important; }
+      .stButton > button, .stDownloadButton > button, .stLinkButton > a,
+      .stFormSubmitButton > button { background:#19253a; color:#e6edf7!important; border:1px solid #364660; border-radius:9px; padding:.6rem .8rem; }
+      .stButton > button p, .stDownloadButton > button p, .stLinkButton > a p,
+      .stFormSubmitButton > button p { color:inherit!important; font-weight:600; line-height:1.4; }
+      .stButton > button [data-testid="stMarkdownContainer"], .stButton > button p { white-space:normal!important; overflow:visible!important; text-overflow:clip!important; }
+      .stButton > button[kind="primary"], .stFormSubmitButton > button[kind="primary"] { background:#bba5ff; border-color:#bba5ff; color:#170e32!important; }
+      .stButton > button:hover, .stDownloadButton > button:hover, .stLinkButton > a:hover { background:#283855; color:#fff!important; border-color:#bba5ff; }
+      .stButton > button[kind="primary"]:hover { background:#d0bfff; color:#170e32!important; }
+      button:focus-visible, a:focus-visible { outline:2px solid #c4b5fd!important; outline-offset:3px; }
+      .stButton > button:disabled { color:#b0bdd0!important; background:#192030!important; }
+      [data-testid="stSidebar"] .stButton > button[kind="primary"] { color:#eee8ff!important; }
+      [data-testid="stWidgetLabel"] p, [data-testid="stExpander"] summary p { color:#e6edf7!important; }
+      [data-baseweb="tab"] { color:#bac7da!important; }
+      [data-baseweb="tab"][aria-selected="true"] { color:#d3c4ff!important; }
+      .desk-eyebrow { color:#c4afff; font-size:.7rem; letter-spacing:.14em; font-weight:700; margin-bottom:.6rem; }
+      .desk-card { border:1px solid #2b3950; background:linear-gradient(125deg,#172237,#101826); border-radius:12px; padding:1rem; min-height:130px; margin:.25rem 0 .4rem; }
+      .desk-card.violet { border-top:2px solid #b499ff; }
+      .desk-card.amber { border-top:2px solid #eab76b; }
+      .desk-card.teal { border-top:2px solid #63d5c6; }
+      .desk-label { color:#b0bdd0; font-size:.66rem; font-weight:650; letter-spacing:.07em; margin-bottom:.55rem; }
+      .desk-value { color:#f2f5fc; font-size:1.5rem; font-weight:650; letter-spacing:-.025em; line-height:1.25; overflow-wrap:anywhere; }
+      .desk-copy { color:#bac7da; font-size:.8rem; line-height:1.5; margin-top:.65rem; }
+      .desk-guide { display:flex; flex-wrap:wrap; align-items:center; gap:14px 24px; padding:14px 18px; border:1px solid #303756; border-radius:10px; background:#18182c; margin:.7rem 0; color:#d3c4ff; font-size:.8rem; }
+      .desk-guide b { color:#faf5ff; }
+      .desk-badge { display:inline-block; background:#3b2b20; color:#ffcf91; padding:5px 9px; border:1px solid #785737; border-radius:5px; font-size:.62rem; font-weight:700; letter-spacing:.05em; margin:0 5px 8px 0; }
+      .desk-badge.neutral { color:#c6d4e6; background:#1a2638; border-color:#3b4a62; }
+      .desk-footer { display:flex; flex-wrap:wrap; gap:10px 24px; color:#b6c5da; border-top:1px solid #2b3950; padding:20px 0; font-size:.85rem; margin-top:24px; }
+      .desk-footer b { color:#d3c4ff; }
+      @media(max-width:800px) { .block-container { padding:3.5rem 1rem 2rem; } .topbar { flex-wrap:wrap; gap:12px; } h1 { font-size:1.8rem!important; } }
     </style>
     <div class="topbar">
       <div class="brand"><span class="brand-mark">✦</span> Purple Team <span style="color:#8291a7;font-weight:500">/ Security Operations</span></div>
-      <div style="display:flex;align-items:center;gap:14px"><span class="live">SYSTEMS NOMINAL</span><span class="env">DEMO ENVIRONMENT</span></div>
+      <div style="display:flex;align-items:center;gap:14px"><span class="env">PUBLIC INTELLIGENCE / DEMO LAB</span></div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -328,79 +368,7 @@ with st.sidebar:
     st.caption("MODE: SAFE SIMULATION")
 
 if page == "Command Center":
-    st.markdown('<div class="section-kicker">Threat readiness workspace</div>', unsafe_allow_html=True)
-    st.title("Review new threats. Prepare decisive response.")
-    st.caption("A security-operations workspace for triaging trusted vulnerability intelligence, planning mitigations, and validating defensive coverage with safe synthetic telemetry.")
-
-    try:
-        latest_advisories = latest_kev_snapshot()
-    except Exception:
-        latest_advisories = []
-    summary = operational_summary()
-    risks = [risk_score(item) for item in st.session_state.advisories]
-    exploited_count = len(latest_advisories)
-
-    top1, top2, top3, top4 = st.columns(4)
-    top1.metric("New exploited advisories", exploited_count, help="Newest records from CISA's Known Exploited Vulnerabilities catalog.")
-    top2.metric("Threats awaiting review", len(st.session_state.advisories))
-    top3.metric("Detection paths validated", f"{summary['coverage']} / 3")
-    top4.metric("Highest intake priority", f"{max(risks, default=0)}/100")
-
-    st.subheader("Your review workflow")
-    step1, step2, step3, step4 = st.columns(4)
-    step1.markdown('<div class="workflow-card"><span class="workflow-step">1</span><b>Triage intelligence</b><p>Review newly exploited advisories and capture analyst-found threats with their source, scope, and confidence.</p></div>', unsafe_allow_html=True)
-    step2.markdown('<div class="workflow-card"><span class="workflow-step">2</span><b>Confirm exposure</b><p>Use your approved asset inventory to determine whether affected products, identities, or interfaces are in scope.</p></div>', unsafe_allow_html=True)
-    step3.markdown('<div class="workflow-card"><span class="workflow-step">3</span><b>Prepare actions</b><p>Prioritize vendor patches, compensating controls, evidence preservation, and containment owners.</p></div>', unsafe_allow_html=True)
-    step4.markdown('<div class="workflow-card"><span class="workflow-step">4</span><b>Validate controls</b><p>Run telemetry-only simulations to verify detections and response playbooks without touching production systems.</p></div>', unsafe_allow_html=True)
-
-    left, right = st.columns([3, 2])
-    with left:
-        st.subheader("New exploited intelligence")
-        st.caption("CISA KEV entries indicate known exploitation. Treat product exposure as unconfirmed here until you validate it against your own inventory.")
-        if latest_advisories:
-            latest_rows = [{"Advisory": item["title"], "CVE": item["cve"], "Added": item["added"], "Affected product": item["product"]} for item in latest_advisories[:5]]
-            st.dataframe(pd.DataFrame(latest_rows), use_container_width=True, hide_index=True)
-            with st.expander("View all latest advisory records"):
-                all_rows = [{"Advisory": item["title"], "CVE": item["cve"], "Added": item["added"], "Affected product": item["product"]} for item in latest_advisories]
-                st.dataframe(pd.DataFrame(all_rows), use_container_width=True, hide_index=True)
-        else:
-            st.info("The live advisory feed is temporarily unavailable. You can retry the import from Threat Intake.")
-    with right:
-        st.subheader("Recommended next actions")
-        st.markdown('<div class="action-card"><b>1. Identify exposure</b><br>Match today’s advisory products and CVEs to approved asset and internet-exposure inventories.</div>', unsafe_allow_html=True)
-        st.markdown('<div class="action-card"><b>2. Apply or mitigate</b><br>Use the vendor-required action below; where patching is delayed, disable exposed administration paths and enforce access controls.</div>', unsafe_allow_html=True)
-        st.markdown('<div class="action-card"><b>3. Validate readiness</b><br>Confirm monitoring for web, identity, endpoint, and egress behavior before closing the review.</div>', unsafe_allow_html=True)
-        if st.button("Run advisory readiness simulation", type="primary", use_container_width=True, disabled=not latest_advisories):
-            count = run_advisory_campaign(latest_advisories)
-            st.success(f"Completed {count} safe, telemetry-only advisory simulations.")
-        st.caption("This simulation creates synthetic signals only—no scanning, exploitation, external traffic, or production changes.")
-
-    st.subheader("Immediate mitigation guidance")
-    if latest_advisories:
-        patch_rows = [{"CVE": item["cve"], "Affected product": item["product"], "Vendor / CISA action": item["patch"]} for item in latest_advisories[:5]]
-        st.dataframe(pd.DataFrame(patch_rows), use_container_width=True, hide_index=True)
-        st.caption("Use these advisory actions alongside your change-management process, maintenance windows, and product-specific vendor guidance.")
-
-    st.subheader("Detection and response readiness")
-    render_live_pipeline(len(st.session_state.advisories), len(st.session_state.runs), len(st.session_state.events))
-    ready1, ready2, ready3 = st.columns(3)
-    ready1.metric("Safe simulations completed", len(st.session_state.runs))
-    ready2.metric("Synthetic signals correlated", len(st.session_state.events))
-    ready3.metric("High-priority signals exercised", summary["high_signals"])
-    readiness_left, readiness_right = st.columns([3, 2])
-    with readiness_left:
-        st.markdown("#### Control improvements to validate")
-        for remediation in summary["remediations"]:
-            st.markdown(f"- {remediation}")
-    with readiness_right:
-        st.markdown("#### What the numbers mean")
-        st.markdown('<div class="muted-panel">These counts demonstrate portfolio readiness coverage, not activity in a real environment. Connect only approved telemetry and asset sources before using this workflow for operational decisions.</div>', unsafe_allow_html=True)
-
-    st.subheader("Exposure patterns to watch")
-    watch1, watch2, watch3 = st.columns(3)
-    watch1.markdown('<div class="insight-card"><div class="section-kicker">External interfaces</div><b>Internet-facing administration</b><span>Review patch currency, MFA, allowlisting, and WAF or proxy logs for management interfaces.</span></div>', unsafe_allow_html=True)
-    watch2.markdown('<div class="insight-card"><div class="section-kicker">Identity boundary</div><b>OAuth and service accounts</b><span>Review privileged consent, token lifetime, high-risk sign-ins, and anomalous API access.</span></div>', unsafe_allow_html=True)
-    watch3.markdown('<div class="insight-card"><div class="section-kicker">Core platforms</div><b>Kernel and appliance fleets</b><span>Track advisories, inventory exposure, and maintain rollback-ready patch deployment plans.</span></div>', unsafe_allow_html=True)
+    render_dashboard(latest_kev_snapshot, fetch_kev, simulate, SCENARIOS, render_live_pipeline)
 
 elif page == "Threat Intake":
     st.header("Threat intake")
