@@ -133,7 +133,8 @@ def scenario_for(advisory: dict[str, Any]) -> str:
 
 def run_recent_briefing() -> int:
     """Generate a safe, telemetry-only readiness test from the newest intake records."""
-    candidates = st.session_state.advisories[:3]
+    kev_records = [item for item in st.session_state.advisories if item.get("source") == "CISA KEV"]
+    candidates = (kev_records or st.session_state.advisories)[:3]
     for advisory in reversed(candidates):
         simulate(scenario_for(advisory), advisory["title"])
     return len(candidates)
