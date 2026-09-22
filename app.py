@@ -174,6 +174,27 @@ def import_recent_kev() -> int:
     return added
 
 
+def latest_kev_snapshot(limit: int = 10) -> list[dict[str, Any]]:
+    """Normalize the latest CISA KEV entries for defensive display and testing."""
+    items = sorted(fetch_kev(), key=lambda x: x.get("dateAdded", ""), reverse=True)[:limit]
+    return [{
+        "title": item.get("vulnerabilityName", item.get("cveID", "Unidentified advisory")),
+        "cve": item.get("cveID", "Not assigned"),
+        "added": item.get("dateAdded", "Unknown"),
+        "product": f"{item.get('vendorProject', '')} {item.get('product', '')}".strip() or "Affected product not specified",
+        "patch": item.get("requiredAction", "Apply the vendor's current security update and validate exposure."),
+        "source": "CISA KEV",
+        "technique": "T1190 — Exploit Public-Facing Application",
+    } for item in items]
+
+
+def run_advisory_campaign(advisories: list[dict[str, Any]]) -> int:
+    """Run safe synthetic tests only; advisory data is never used as executable input."""
+    for advisory in reversed(advisories):
+        simulate(scenario_for(advisory), advisory["title"])
+    return len(advisories)
+
+
 init_state()
 
 st.markdown(
@@ -246,6 +267,33 @@ if page == "Command Center":
     card1.markdown('<div class="insight-card"><div class="section-kicker">Priority path</div><b>Public-facing gateway</b><span>Active-exploitation signal detected. Validate exposure and containment coverage.</span></div>', unsafe_allow_html=True)
     card2.markdown('<div class="insight-card"><div class="section-kicker">Detection posture</div><b>Coverage ready</b><span>Three safe adversary scenarios are available for replay and response validation.</span></div>', unsafe_allow_html=True)
     card3.markdown('<div class="insight-card"><div class="section-kicker">Operations loop</div><b>Intake → Response</b><span>Threat records are reviewed before they become simulation scenarios.</span></div>', unsafe_allow_html=True)
+    st.subheader("Latest exploited advisories")
+    st.caption("Current CISA KEV records. Exploitation is confirmed; zero-day status is not inferred unless the original publisher explicitly states it.")
+    try:
+        latest_advisories = latest_kev_snapshot()
+    except Exception:
+        latest_advisories = []
+    if latest_advisories:
+        action_col, note_col = st.columns([1, 3])
+        with action_col:
+            if st.button("Run 10 advisory simulations", type="primary", use_container_width=True):
+                count = run_advisory_campaign(latest_advisories)
+                st.success(f"Completed {count} safe, telemetry-only advisory simulations.")
+        with note_col:
+            st.caption("Each simulation emits synthetic behavioral signals only and produces detection plus containment recommendations.")
+        latest_rows = [{"Advisory": item["title"], "CVE": item["cve"], "Added": item["added"], "Affected scope": item["product"]} for item in latest_advisories]
+        st.dataframe(pd.DataFrame(latest_rows), use_container_width=True, hide_index=True)
+        st.subheader("Recommended patch and mitigation")
+        patch_rows = [{"CVE": item["cve"], "Advisory": item["title"], "Recommended action": item["patch"]} for item in latest_advisories]
+        st.dataframe(pd.DataFrame(patch_rows), use_container_width=True, hide_index=True)
+    else:
+        st.info("The live advisory feed is temporarily unavailable. Use Threat Intake to retry the CISA KEV import.")
+    st.subheader("Emerging exposure watchlist")
+    st.caption("Defensive prioritization based on commonly targeted exposure patterns—not predictions of undisclosed vulnerabilities.")
+    watch1, watch2, watch3 = st.columns(3)
+    watch1.markdown('<div class="insight-card"><div class="section-kicker">External interfaces</div><b>Internet-facing administration</b><span>Prioritize patch currency, MFA, allowlisting, and log coverage for gateways and management consoles.</span></div>', unsafe_allow_html=True)
+    watch2.markdown('<div class="insight-card"><div class="section-kicker">Identity boundary</div><b>OAuth and service accounts</b><span>Review privileged consent, token lifetime, and anomalous API access for high-impact misuse paths.</span></div>', unsafe_allow_html=True)
+    watch3.markdown('<div class="insight-card"><div class="section-kicker">Core platforms</div><b>Kernel and appliance fleets</b><span>Track vendor advisories, inventory exposure, and validate rollback-ready patch deployment.</span></div>', unsafe_allow_html=True)
     st.subheader("Prioritized exposure queue")
     rows = [{"Threat": x["title"], "Risk": risk_score(x), "Exploited in wild": "Yes" if x["exploited"] else "No", "Technique": x["technique"]} for x in st.session_state.advisories]
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
