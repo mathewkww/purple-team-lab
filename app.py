@@ -146,24 +146,68 @@ def import_recent_kev() -> int:
 
 init_state()
 
-st.title("🟣 Purple Team Lab")
-st.caption("A simulation-only threat-intelligence, detection, and response showcase. No live exploitation or production controls.")
+st.markdown(
+    """
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap');
+      :root { --ink:#f4f7fb; --muted:#91a0b7; --line:#263246; --panel:#121b29; --panel-2:#182338; --purple:#9b7cff; --cyan:#36d3c6; --critical:#ff657c; --warning:#ffb75d; }
+      .stApp { background: radial-gradient(circle at 78% -10%, #20214a 0, transparent 28%), #09111d; color:var(--ink); font-family:Inter, sans-serif; }
+      [data-testid="stSidebar"] { background:#0b1422; border-right:1px solid var(--line); }
+      [data-testid="stSidebar"] > div:first-child { padding-top:1.2rem; }
+      [data-testid="stSidebar"] .stRadio label { color:#aab7ca; border-radius:7px; padding:8px 9px; font-size:.87rem; }
+      [data-testid="stSidebar"] .stRadio label:hover { background:#182338; color:#fff; }
+      [data-testid="stSidebar"] [data-checked="true"] { background:linear-gradient(90deg, rgba(155,124,255,.20), transparent); color:#fff!important; }
+      .block-container { max-width:1440px; padding:1.2rem 2.4rem 3.5rem; }
+      .topbar { display:flex; align-items:center; justify-content:space-between; padding:0 0 1.25rem; border-bottom:1px solid var(--line); margin-bottom:1.7rem; }
+      .brand { display:flex; gap:12px; align-items:center; font-size:1.08rem; font-weight:700; letter-spacing:-.02em; }
+      .brand-mark { width:30px; height:30px; display:grid; place-items:center; border-radius:8px; background:linear-gradient(135deg,#b69cff,#684ee9); box-shadow:0 6px 20px rgba(129,94,255,.35); color:white; }
+      .env { color:#bdc7d5; background:#131e2e; border:1px solid #2c3a4f; border-radius:20px; padding:5px 11px; font-size:.75rem; font-family:'DM Mono',monospace; }
+      .live { color:#8ff0c4; font-size:.75rem; font-weight:600; } .live:before { content:'●'; color:var(--cyan); margin-right:6px; }
+      h1,h2,h3 { color:var(--ink)!important; letter-spacing:-.035em; } h1 { font-size:1.7rem!important; margin-bottom:.2rem!important; } h2 { font-size:1.22rem!important; margin-top:1.7rem!important; }
+      p, .stCaption { color:var(--muted)!important; }
+      [data-testid="stMetric"] { background:linear-gradient(145deg, rgba(24,35,56,.95), rgba(15,24,39,.95)); border:1px solid #28364d; border-radius:10px; padding:1rem 1.05rem; min-height:105px; box-shadow:0 16px 32px rgba(0,0,0,.14); }
+      [data-testid="stMetricLabel"] { color:#91a0b7!important; font-size:.77rem!important; text-transform:uppercase; letter-spacing:.08em; } [data-testid="stMetricValue"] { color:#f8fbff!important; font-size:1.72rem!important; }
+      [data-testid="stDataFrame"] { border:1px solid #28364d; border-radius:10px; overflow:hidden; }
+      .stButton > button { background:#8b6bfa; border:0; border-radius:7px; color:white; font-weight:600; box-shadow:none; } .stButton > button:hover { background:#a58bff; border:0; color:white; }
+      .stTextInput input, .stTextArea textarea, [data-baseweb="select"] > div { background:#0e1725!important; border-color:#2c3a4f!important; color:#eef3fb!important; border-radius:7px!important; }
+      [data-testid="stExpander"] { border:1px solid #2a3951!important; border-radius:9px!important; background:#101a2a!important; }
+      .section-kicker { color:#9e8cff; text-transform:uppercase; letter-spacing:.11em; font-size:.69rem; font-weight:700; margin-bottom:.36rem; }
+      .insight-card { background:linear-gradient(125deg,rgba(155,124,255,.15),rgba(18,27,41,.7) 50%); border:1px solid #3a3964; border-radius:10px; padding:1.05rem 1.15rem; min-height:128px; }
+      .insight-card b { color:#fff; font-size:1.02rem; } .insight-card span { color:#9eacc0; font-size:.84rem; display:block; margin-top:.45rem; line-height:1.45; }
+      .sidebar-brand { padding:0 .65rem 1.25rem; font-weight:700; color:#f6f8ff; letter-spacing:-.02em; } .sidebar-brand small { display:block; margin-top:4px; color:#7890ae; font: .68rem 'DM Mono',monospace; letter-spacing:.06em; }
+      .stAlert { border-radius:8px; }
+    </style>
+    <div class="topbar">
+      <div class="brand"><span class="brand-mark">✦</span> Purple Team <span style="color:#8291a7;font-weight:500">/ Security Operations</span></div>
+      <div style="display:flex;align-items:center;gap:14px"><span class="live">SYSTEMS NOMINAL</span><span class="env">DEMO ENVIRONMENT</span></div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 with st.sidebar:
+    st.markdown('<div class="sidebar-brand">PURPLE TEAM LAB<small>THREAT OPERATIONS CONSOLE</small></div>', unsafe_allow_html=True)
     page = st.radio("Workspace", ["Command Center", "Threat Intake", "Simulation Lab", "Detection & Response"], label_visibility="collapsed")
     st.divider()
-    st.caption("Portfolio MVP · synthetic telemetry only")
+    st.caption("SCOPE: SYNTHETIC TELEMETRY ONLY")
+    st.caption("MODE: SAFE SIMULATION")
 
 if page == "Command Center":
+    st.markdown('<div class="section-kicker">Executive overview</div>', unsafe_allow_html=True)
+    st.title("Exposure command center")
+    st.caption("Prioritized threat intelligence and detection readiness across your simulation environment.")
     risks = [risk_score(item) for item in st.session_state.advisories]
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Threat records", len(st.session_state.advisories))
-    col2.metric("Active simulations", len(st.session_state.runs))
-    col3.metric("Synthetic detections", len(st.session_state.events))
-    col4.metric("Highest priority", f"{max(risks, default=0)}/100")
-    st.subheader("Purple-team loop")
-    st.markdown("**Intake → validate → simulate → detect → contain → measure → improve**")
-    st.subheader("Threat priority")
+    col1.metric("Open threat records", len(st.session_state.advisories))
+    col2.metric("Simulations executed", len(st.session_state.runs))
+    col3.metric("Signals correlated", len(st.session_state.events))
+    col4.metric("Critical exposure", f"{max(risks, default=0)}/100")
+    st.write("")
+    card1, card2, card3 = st.columns(3)
+    card1.markdown('<div class="insight-card"><div class="section-kicker">Priority path</div><b>Public-facing gateway</b><span>Active-exploitation signal detected. Validate exposure and containment coverage.</span></div>', unsafe_allow_html=True)
+    card2.markdown('<div class="insight-card"><div class="section-kicker">Detection posture</div><b>Coverage ready</b><span>Three safe adversary scenarios are available for replay and response validation.</span></div>', unsafe_allow_html=True)
+    card3.markdown('<div class="insight-card"><div class="section-kicker">Operations loop</div><b>Intake → Response</b><span>Threat records are reviewed before they become simulation scenarios.</span></div>', unsafe_allow_html=True)
+    st.subheader("Prioritized exposure queue")
     rows = [{"Threat": x["title"], "Risk": risk_score(x), "Exploited in wild": "Yes" if x["exploited"] else "No", "Technique": x["technique"]} for x in st.session_state.advisories]
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
