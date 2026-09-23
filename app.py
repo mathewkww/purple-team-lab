@@ -12,6 +12,7 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 from dashboard import render_dashboard
+from red_team import render_red_team_studio
 
 
 st.set_page_config(page_title="Purple Team Lab", page_icon="🟣", layout="wide")
@@ -87,7 +88,7 @@ def init_state() -> None:
     if "baseline_seeded" not in st.session_state:
         st.session_state.baseline_seeded = False
     if "page" not in st.session_state:
-        st.session_state.page = "Command Center"
+        st.session_state.page = "Purple Team Lab"
 
 
 def risk_score(advisory: dict[str, Any]) -> int:
@@ -346,10 +347,21 @@ st.markdown(
       .desk-badge.neutral { color:#c6d4e6; background:#1a2638; border-color:#3b4a62; }
       .desk-footer { display:flex; flex-wrap:wrap; gap:10px 24px; color:#b6c5da; border-top:1px solid #2b3950; padding:20px 0; font-size:.85rem; margin-top:24px; }
       .desk-footer b { color:#d3c4ff; }
+      .platform-nav-label { color:#7286a2; font:700 .63rem 'DM Mono',monospace; letter-spacing:.12em; margin:1.35rem .65rem .45rem; }
+      .red-card { border:1px solid #2b3950; background:linear-gradient(125deg,#172237,#101826); border-radius:12px; padding:1rem; min-height:130px; margin:.25rem 0 .4rem; }
+      .red-card.red-accent { border-top:2px solid #ff7c93; } .red-card.amber { border-top:2px solid #eab76b; } .red-card.violet { border-top:2px solid #b499ff; } .red-card.teal { border-top:2px solid #63d5c6; }
+      .red-value { color:#f2f5fc; font-size:1.5rem; font-weight:650; letter-spacing:-.025em; line-height:1.25; overflow-wrap:anywhere; }
+      .red-track { background:linear-gradient(135deg,rgba(255,110,132,.12),rgba(20,29,45,.95)); border:1px solid #593947; border-radius:12px; padding:1rem 1.1rem; margin:1rem 0 .6rem; }
+      .red-track span, .threat-model-head { color:#ffadba; font:700 .66rem 'DM Mono',monospace; letter-spacing:.1em; } .red-track b { display:block; color:#f4f6fb; font-size:1.12rem; margin:.35rem 0; } .red-track p { color:#c1ccdb; font-size:.86rem; line-height:1.5; margin:0; }
+      .threat-model-head { border-bottom:1px solid #3b415b; padding-bottom:.65rem; margin-bottom:.4rem; }
+      .attack-step { display:flex; gap:14px; padding:14px 0; border-bottom:1px solid #26364c; opacity:.48; } .attack-step.active { opacity:1; background:linear-gradient(90deg,rgba(187,165,255,.12),transparent); margin:0 -.8rem; padding:14px .8rem; border-radius:8px; } .attack-step.complete { opacity:.82; }
+      .attack-marker { flex:0 0 31px; height:31px; display:grid; place-items:center; border-radius:50%; border:1px solid #42516a; color:#b9c7dc; font:.69rem 'DM Mono',monospace; font-weight:700; } .attack-step.active .attack-marker { background:#bba5ff; border-color:#bba5ff; color:#170e32; } .attack-step.complete .attack-marker { background:#173e3c; border-color:#55cfc0; color:#9bf2e8; }
+      .attack-stage { color:#f1f5fb; font-size:.97rem; font-weight:650; } .attack-event { color:#c1ccdb; font-size:.85rem; line-height:1.5; margin-top:.25rem; } .attack-action { color:#9ad9d0; font-size:.72rem; line-height:1.4; margin-top:.45rem; font-weight:600; }
+      .red-log { display:grid; grid-template-columns:1fr auto; gap:5px 16px; padding:.8rem 1rem; background:#111b2a; border:1px solid #293850; border-radius:8px; margin:.45rem 0; } .red-log b { color:#edf2fa; font-size:.9rem; } .red-log span, .red-log small { color:#aab9cc; font-size:.76rem; } .red-log small { grid-column:1 / -1; font-family:'DM Mono',monospace; }
       @media(max-width:800px) { .block-container { padding:3.5rem 1rem 2rem; } .topbar { flex-wrap:wrap; gap:12px; } h1 { font-size:1.8rem!important; } }
     </style>
     <div class="topbar">
-      <div class="brand"><span class="brand-mark">✦</span> Purple Team <span style="color:#8291a7;font-weight:500">/ Security Operations</span></div>
+      <div class="brand"><span class="brand-mark">✦</span> Security Readiness <span style="color:#8291a7;font-weight:500">/ Simulation Platform</span></div>
       <div style="display:flex;align-items:center;gap:14px"><span class="env">PUBLIC INTELLIGENCE / DEMO LAB</span></div>
     </div>
     """,
@@ -357,9 +369,15 @@ st.markdown(
 )
 
 with st.sidebar:
-    st.markdown('<div class="sidebar-brand">PURPLE TEAM LAB<small>THREAT OPERATIONS CONSOLE</small></div>', unsafe_allow_html=True)
-    navigation = [("Command Center", "◫"), ("Threat Intake", "◌"), ("Simulation Lab", "◈"), ("Detection & Response", "◉"), ("Recent Simulations", "◷")]
+    st.markdown('<div class="sidebar-brand">SECURITY READINESS<small>SIMULATION PLATFORM</small></div>', unsafe_allow_html=True)
+    st.markdown('<div class="platform-nav-label">WORKSPACES</div>', unsafe_allow_html=True)
+    navigation = [("Purple Team Lab", "◫"), ("Red Team Studio", "◈")]
     for destination, icon in navigation:
+        if st.button(f"{icon}  {destination}", key=f"nav-{destination}", type="primary" if st.session_state.page == destination else "secondary"):
+            st.session_state.page = destination
+    st.markdown('<div class="platform-nav-label">PURPLE OPERATIONS</div>', unsafe_allow_html=True)
+    operations = [("Threat Intake", "◌"), ("Simulation Lab", "◈"), ("Detection & Response", "◉"), ("Recent Simulations", "◷")]
+    for destination, icon in operations:
         if st.button(f"{icon}  {destination}", key=f"nav-{destination}", type="primary" if st.session_state.page == destination else "secondary"):
             st.session_state.page = destination
     page = st.session_state.page
@@ -367,8 +385,11 @@ with st.sidebar:
     st.caption("SCOPE: SYNTHETIC TELEMETRY ONLY")
     st.caption("MODE: SAFE SIMULATION")
 
-if page == "Command Center":
+if page == "Purple Team Lab":
     render_dashboard(latest_kev_snapshot, fetch_kev, simulate, SCENARIOS, render_live_pipeline)
+
+elif page == "Red Team Studio":
+    render_red_team_studio()
 
 elif page == "Threat Intake":
     st.header("Threat intake")
