@@ -1,9 +1,10 @@
 # Security Readiness Platform
 
-A portfolio-ready, **simulation-only** Streamlit platform with two analyst workspaces:
+A portfolio-ready, **simulation-only** Streamlit platform with three analyst workspaces:
 
 1. **Purple Team Lab** — intake advisory-derived threats, create remediation plans, and rehearse defensive telemetry.
 2. **Red Team Studio** — step through safe attack stories based on MITRE ATT&CK and OWASP risks, with a live threat-model panel and disruption guidance.
+3. **Signal Context** — correlate fictional identity, SIEM, SOAR, and cloud telemetry into an evidence-led vertical investigation timeline, with replay, threat-model hypotheses, response validation and exportable analyst handoffs.
 
 It uses synthetic observations only. It does not provide exploit instructions, execute commands, scan hosts, send traffic, contact infrastructure, or change production controls.
 
@@ -22,6 +23,14 @@ Six baseline template runs generate synthetic telemetry at session startup. Addi
 Red Team Studio uses four analyst-led tracks: public-facing application exposure (MITRE T1190), identity and SaaS account abuse (MITRE T1078), web authorization/API misuse (OWASP A01:2025), and software supply-chain integrity (OWASP A03:2025). Each track provides fictional stage observations, expected telemetry, decision gates, and disruption/denial prompts.
 
 The live threat-model panel is session-local. It captures only an environment pattern, a service label, external exposure, and telemetry ownership to focus the review. It is a preparation aid, not a risk engine or source of operational instructions. Do not enter secrets, customer data, incident details, or other sensitive information in the public demo.
+
+## Signal Context
+
+A reproducible, in-memory SQLite database contains 26 synthetic records: cloud-account/storage activity, cross-tenant API disclosure, and an authorized monitoring change. Three unrelated same-IP neighbors and one duplicate ingestion teach correlation hygiene. Source names (Entra ID, AWS CloudTrail, GCP Cloud Logging, Azure Activity, Splunk ES/SOAR, Microsoft Sentinel and Logic Apps) identify illustrative, simplified data shapes, not installed integrations or complete vendor schemas.
+
+Correlation uses an explicit principal/session mapping and a bounded event-time window, with source/original-ID deduplication. Findings use only revealed, included records. Remove a source to observe coverage gaps; move the replay cursor to see how confidence and response validation evolve. SIEM alerts are derived findings, and queued SOAR actions do not count as verified containment. Framework links cover MITRE ATT&CK and OWASP API1:2023, A01:2025 and A09:2025. Labels are teaching assessments, not calibrated risk probabilities or confirmed actor attribution.
+
+The workspace includes raw payload inspection, evidence lineage, competing explanations, recommended action owners, a session-local analyst notebook, JSON handoff export and a downloadable SQLite fixture. Nothing connects to production, performs attacks, changes controls, or calls a paid model API. For real use, implement authenticated read-only connectors, validated identity resolution, ingestion/integrity handling, secure retention and access controls before accepting operational data.
 
 ## Run locally
 

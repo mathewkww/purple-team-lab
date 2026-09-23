@@ -13,9 +13,10 @@ import streamlit as st
 import streamlit.components.v1 as components
 from dashboard import render_dashboard
 from red_team import render_red_team_studio
+from signal_context import render_signal_context
 
 
-st.set_page_config(page_title="Purple Team Lab", page_icon="🟣", layout="wide")
+st.set_page_config(page_title="Security Readiness", page_icon="🟣", layout="wide")
 
 
 SAMPLE_ADVISORIES: list[dict[str, Any]] = [
@@ -329,7 +330,8 @@ st.markdown(
       .stButton > button[kind="primary"]:hover { background:#d0bfff; color:#170e32!important; }
       button:focus-visible, a:focus-visible { outline:2px solid #c4b5fd!important; outline-offset:3px; }
       .stButton > button:disabled { color:#b0bdd0!important; background:#192030!important; }
-      [data-testid="stSidebar"] .stButton > button[kind="primary"] { color:#eee8ff!important; }
+      [data-testid="stSidebar"] .stButton > button[kind="primary"],
+      [data-testid="stSidebar"] .stButton > button[kind="primary"]:hover { background:#30254d!important; border-color:#9f83e5; color:#f5efff!important; }
       [data-testid="stWidgetLabel"] p, [data-testid="stExpander"] summary p { color:#e6edf7!important; }
       [data-baseweb="tab"] { color:#bac7da!important; }
       [data-baseweb="tab"][aria-selected="true"] { color:#d3c4ff!important; }
@@ -371,15 +373,17 @@ st.markdown(
 with st.sidebar:
     st.markdown('<div class="sidebar-brand">SECURITY READINESS<small>SIMULATION PLATFORM</small></div>', unsafe_allow_html=True)
     st.markdown('<div class="platform-nav-label">WORKSPACES</div>', unsafe_allow_html=True)
-    navigation = [("Purple Team Lab", "◫"), ("Red Team Studio", "◈")]
+    navigation = [("Purple Team Lab", "◫"), ("Red Team Studio", "◈"), ("Signal Context", "⌁")]
     for destination, icon in navigation:
         if st.button(f"{icon}  {destination}", key=f"nav-{destination}", type="primary" if st.session_state.page == destination else "secondary"):
             st.session_state.page = destination
+            st.rerun()
     st.markdown('<div class="platform-nav-label">PURPLE OPERATIONS</div>', unsafe_allow_html=True)
     operations = [("Threat Intake", "◌"), ("Simulation Lab", "◈"), ("Detection & Response", "◉"), ("Recent Simulations", "◷")]
     for destination, icon in operations:
         if st.button(f"{icon}  {destination}", key=f"nav-{destination}", type="primary" if st.session_state.page == destination else "secondary"):
             st.session_state.page = destination
+            st.rerun()
     page = st.session_state.page
     st.divider()
     st.caption("SCOPE: SYNTHETIC TELEMETRY ONLY")
@@ -390,6 +394,9 @@ if page == "Purple Team Lab":
 
 elif page == "Red Team Studio":
     render_red_team_studio()
+
+elif page == "Signal Context":
+    render_signal_context()
 
 elif page == "Threat Intake":
     st.header("Threat intake")
