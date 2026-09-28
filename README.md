@@ -5,6 +5,7 @@ A portfolio-ready, **simulation-only** Streamlit platform with three analyst wor
 1. **Purple Team Lab** — intake advisory-derived threats, create remediation plans, and rehearse defensive telemetry.
 2. **Red Team Studio** — step through safe attack stories based on MITRE ATT&CK and OWASP risks, with a live threat-model panel and disruption guidance.
 3. **Signal Context** — correlate fictional identity, SIEM, SOAR, and cloud telemetry into an evidence-led vertical investigation timeline, with replay, threat-model hypotheses, response validation and exportable analyst handoffs.
+4. **Model Risk Studio** — investigate fictional LLM misuse traces across prompts, retrieval, policy gates and tool proposals, with OWASP, MITRE ATLAS and NIST-aligned risk and response guidance.
 
 It uses synthetic observations only. It does not provide exploit instructions, execute commands, scan hosts, send traffic, contact infrastructure, or change production controls.
 
@@ -31,6 +32,12 @@ A reproducible, in-memory SQLite database contains 26 synthetic records: cloud-a
 Correlation uses an explicit principal/session mapping and a bounded event-time window, with source/original-ID deduplication. Findings use only revealed, included records. Remove a source to observe coverage gaps; move the replay cursor to see how confidence and response validation evolve. SIEM alerts are derived findings, and queued SOAR actions do not count as verified containment. Framework links cover MITRE ATT&CK and OWASP API1:2023, A01:2025 and A09:2025. Labels are teaching assessments, not calibrated risk probabilities or confirmed actor attribution.
 
 The workspace includes raw payload inspection, evidence lineage, competing explanations, recommended action owners, a session-local analyst notebook, JSON handoff export and a downloadable SQLite fixture. Nothing connects to production, performs attacks, changes controls, or calls a paid model API. For real use, implement authenticated read-only connectors, validated identity resolution, ingestion/integrity handling, secure retention and access controls before accepting operational data.
+
+## Model Risk Studio
+
+Model Risk Studio provides four fictional investigation traces: indirect retrieval injection, sensitive-context disclosure, agent tool-scope escalation, and unbounded consumption. It covers OWASP's 2025 LLM Top 10 at a high level, refers to MITRE ATLAS for adversarial ML technique modeling, and frames assurance around NIST AI RMF's Govern, Map, Measure and Manage functions. It does not execute prompts, call models, run classifiers, use customer data, or provide bypass or misuse instructions.
+
+The trace replay deliberately distinguishes model/user input, a detection signal, a rejected policy decision, and verified external execution. Public vendor guidance informs the product patterns: structured input/output checks, tool-level controls, least privilege, human approval for consequential actions, evaluation/red-team feedback loops, real-time and asynchronous monitoring, protected audit trails, and rapid incident response. These are design patterns—not claims that the demo recreates OpenAI or Anthropic systems, nor guarantees that any control eliminates model risk.
 
 ## Run locally
 

@@ -14,6 +14,7 @@ import streamlit.components.v1 as components
 from dashboard import render_dashboard
 from red_team import render_red_team_studio
 from signal_context import render_signal_context
+from model_risk import render_model_risk_studio
 
 
 st.set_page_config(page_title="Security Readiness", page_icon="🟣", layout="wide")
@@ -373,7 +374,7 @@ st.markdown(
 with st.sidebar:
     st.markdown('<div class="sidebar-brand">SECURITY READINESS<small>SIMULATION PLATFORM</small></div>', unsafe_allow_html=True)
     st.markdown('<div class="platform-nav-label">WORKSPACES</div>', unsafe_allow_html=True)
-    navigation = [("Purple Team Lab", "◫"), ("Red Team Studio", "◈"), ("Signal Context", "⌁")]
+    navigation = [("Purple Team Lab", "◫"), ("Red Team Studio", "◈"), ("Signal Context", "⌁"), ("Model Risk Studio", "◉")]
     for destination, icon in navigation:
         if st.button(f"{icon}  {destination}", key=f"nav-{destination}", type="primary" if st.session_state.page == destination else "secondary"):
             st.session_state.page = destination
@@ -397,6 +398,9 @@ elif page == "Red Team Studio":
 
 elif page == "Signal Context":
     render_signal_context()
+
+elif page == "Model Risk Studio":
+    render_model_risk_studio()
 
 elif page == "Threat Intake":
     st.header("Threat intake")
